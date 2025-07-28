@@ -1,11 +1,14 @@
 from .eOperations import eadd, esubtract, emultiply, edivide, ereciprocal
-
-# مؤقتاً حتى تعيد إضافة epower
-def epower(*args, **kwargs):
-    raise NotImplementedError("epower تم إزالتها مؤقتاً")
+from .eTensor import eTensor, etadd, etsubtract, etmultiply, etdivide, etreciprocal
 
 __all__ = ['eadd',
            'esubtract',
            'emultiply',
-           'edivide', 
-           'ereciprocal',]
+           'edivide',
+           'ereciprocal',
+           'eTensor',
+           'etadd',
+           'etsubtract',
+           'etmultiply',
+           'etdivide',
+           'etreciprocal']
