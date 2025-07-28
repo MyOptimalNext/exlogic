@@ -1,34 +1,93 @@
-import random from typing import Any, List, Tuple from exlogic.eEncoder import float32_to_comp64
+from exlogic.eEncoder import float32_to_comp64 from exlogic.eDecoder import comp64_to_float32 from exlogic.eArithmetic import eadd, esubtract, emultiply, edivide, ereciprocal import random
 
-Tensor = List[List[int]]
+class eTensor: def init(self, values): self.values = self._encode_tensor(values)
 
-ENCODED_ZERO = float32_to_comp64(0.0)
+def _encode_tensor(self, values):
+    if isinstance(values[0], list):
+        return [[float32_to_comp64(v) for v in row] for row in values]
+    return [float32_to_comp64(v) for v in values]
 
-def etensor_empty(shape: Tuple[int, int]) -> Tensor: rows, cols = shape return [[ENCODED_ZERO for _ in range(cols)] for _ in range(rows)]
+def shape(self):
+    if isinstance(self.values[0], list):
+        return (len(self.values), len(self.values[0]))
+    return (len(self.values),)
 
-def etensor_full(shape: Tuple[int, int], value: float) -> Tensor: comp64_val = float32_to_comp64(value) rows, cols = shape return [[comp64_val for _ in range(cols)] for _ in range(rows)]
+def matmul(self, other):
+    a, b = self.values, other.values
+    m, n = len(a), len(a[0])
+    n2, p = len(b), len(b[0])
+    assert n == n2, "incompatible shapes"
+    result = []
+    for i in range(m):
+        row = []
+        for j in range(p):
+            sum_elem = emultiply(a[i][0], b[0][j])
+            for k in range(1, n):
+                sum_elem = eadd(sum_elem, emultiply(a[i][k], b[k][j]))
+            row.append(sum_elem)
+        result.append(row)
+    return eTensor(result)
 
-def etensor_zeros(shape: Tuple[int, int]) -> Tensor: return etensor_full(shape, 0.0)
+def transpose(self):
+    values = self.values
+    if isinstance(values[0], list):
+        return eTensor([[values[j][i] for j in range(len(values))] for i in range(len(values[0]))])
+    return eTensor([[v] for v in values])
 
-def etensor_ones(shape: Tuple[int, int]) -> Tensor: return etensor_full(shape, 1.0)
+def reshape(self, new_shape):
+    flat = self.flatten().values
+    assert new_shape[0] * new_shape[1] == len(flat)
+    reshaped = []
+    for i in range(new_shape[0]):
+        row = []
+        for j in range(new_shape[1]):
+            row.append(flat[i * new_shape[1] + j])
+        reshaped.append(row)
+    return eTensor(reshaped)
 
-def etensor_identity(size: int) -> Tensor: tensor = etensor_zeros((size, size)) for i in range(size): tensor[i][i] = float32_to_comp64(1.0) return tensor
+def flatten(self):
+    if isinstance(self.values[0], list):
+        return eTensor([v for row in self.values for v in row])
+    return self
 
-def etensor_eye(rows: int, cols: int, k: int = 0) -> Tensor: tensor = etensor_zeros((rows, cols)) for i in range(rows): j = i + k if 0 <= j < cols: tensor[i][j] = float32_to_comp64(1.0) return tensor
+def softmax(self):
+    exp_rows = []
+    for row in self.values:
+        decoded = [comp64_to_float32(v) for v in row]
+        max_val = max(decoded)
+        exp_vals = [math.exp(v - max_val) for v in decoded]
+        sum_exp = sum(exp_vals)
+        normalized = [float32_to_comp64(v / sum_exp) for v in exp_vals]
+        exp_rows.append(normalized)
+    return eTensor(exp_rows)
 
-def etensor_random(shape: Tuple[int, int], min_val: float = 0.0, max_val: float = 1.0) -> Tensor: rows, cols = shape return [[float32_to_comp64(random.uniform(min_val, max_val)) for _ in range(cols)] for _ in range(rows)]
+def __repr__(self):
+    return f"eTensor({self.values})"
 
-def etensor_shape(tensor: Tensor) -> Tuple[int, int]: return len(tensor), len(tensor[0]) if tensor else 0
+@staticmethod
+def zeros(shape):
+    if len(shape) == 1:
+        return eTensor([0.0] * shape[0])
+    return eTensor([[0.0] * shape[1] for _ in range(shape[0])])
 
-def etensor_transpose(tensor: Tensor) -> Tensor: rows, cols = etensor_shape(tensor) return [[tensor[i][j] for i in range(rows)] for j in range(cols)]
+@staticmethod
+def ones(shape):
+    if len(shape) == 1:
+        return eTensor([1.0] * shape[0])
+    return eTensor([[1.0] * shape[1] for _ in range(shape[0])])
 
-def etensor_flip(tensor: Tensor, axis: int = 0) -> Tensor: if axis == 0: return tensor[::-1] if axis == 1: return [row[::-1] for row in tensor] raise ValueError("Axis must be 0 or 1")
+@staticmethod
+def full(shape, fill_value):
+    val = float32_to_comp64(fill_value)
+    if len(shape) == 1:
+        return eTensor([fill_value] * shape[0])
+    return eTensor([[fill_value] * shape[1] for _ in range(shape[0])])
 
-def etensor_reverse(tensor: Tensor) -> Tensor: return etensor_flip(etensor_flip(tensor, axis=0), axis=1)
+@staticmethod
+def random(shape):
+    if len(shape) == 1:
+        return eTensor([random.random() for _ in range(shape[0])])
+    return eTensor([[random.random() for _ in range(shape[1])] for _ in range(shape[0])])
 
-def etensor_reshape(tensor: Tensor, new_shape: Tuple[int, int]) -> Tensor: rows, cols = etensor_shape(tensor) total = rows * cols new_rows, new_cols = new_shape if new_rows * new_cols != total: raise ValueError(f"Cannot reshape array of size {total} into shape {new_shape}") flat = [tensor[i][j] for i in range(rows) for j in range(cols)] return [flat[i*new_cols:(i+1)*new_cols] for i in range(new_rows)]
-
-def etensor_flatten(tensor: Tensor) -> List[int]: rows, cols = etensor_shape(tensor) return [tensor[i][j] for i in range(rows) for j in range(cols)]
-
-all = [ 'etensor_empty', 'etensor_full', 'etensor_zeros', 'etensor_ones', 'etensor_identity', 'etensor_eye', 'etensor_random', 'etensor_shape', 'etensor_transpose', 'etensor_flip', 'etensor_reverse', 'etensor_reshape', 'etensor_flatten' ]
+all = ['eTensor']
 
