@@ -1,6 +1,6 @@
 import math
-from ..eEncoder import float32_to_comp64
-from ..eDecoder import comp64_to_float32
+from exlogic.eEncoder import float32_to_comp64
+from exlogic.eDecoder import comp64_to_float32
 
 def eadd(comp64_a: int, comp64_b: int) -> int:
     a = comp64_to_float32(comp64_a)
