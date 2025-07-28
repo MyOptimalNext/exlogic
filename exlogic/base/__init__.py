@@ -1,7 +1,17 @@
-from .eOperations import eadd, esubtract, emultiply, edivide, ereciprocal
-from .eTensor import eTensor, etadd, etsubtract, etmultiply, etdivide, etreciprocal
+from .eOperations import (
+    eadd, esubtract, emultiply, edivide, ereciprocal
+)
 
-__all__ = ['eadd',
+from .eTensor import (
+    eTensor, etadd, etsubtract, etmultiply, etdivide, etreciprocal
+)
+
+from .eVector import (
+    eVector, evadd, evsubtract, evmultiply, evdivide, evreciprocal
+)
+
+__all__ = [
+           'eadd',
            'esubtract',
            'emultiply',
            'edivide',
@@ -11,4 +21,11 @@ __all__ = ['eadd',
            'etsubtract',
            'etmultiply',
            'etdivide',
-           'etreciprocal']
+           'etreciprocal',
+           'eVector',
+           'evadd',
+           'evsubtract',
+           'evmultiply',
+           'evdivide',
+           'evreciprocal',
+]
