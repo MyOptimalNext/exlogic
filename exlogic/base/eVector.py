@@ -1,91 +1,37 @@
-import numpy as np
-from typing import List, Union
+from typing import List
 from exlogic.eEncoder import float32_to_comp64
-from exlogic.eDecoder import comp64_to_float32
-from exlogic.base.eOperations import eadd, esubtract, emultiply, edivide, ereciprocal
+import random
 
-class eVector:
-    def __init__(self, data: Union[List, np.ndarray]):
-        if isinstance(data, list):
-            self.data = np.array(data, dtype=object)
-            self._encode_data()
-        elif isinstance(data, np.ndarray):
-            self.data = data.astype(object)
-            self._encode_data()
-        else:
-            raise TypeError("Data must be list or numpy array")
+Vector = List[int]
 
-    def _encode_data(self):
-        encoded = []
-        for item in self.data:
-            if isinstance(item, (int, float, np.integer, np.floating)):
-                encoded.append(float32_to_comp64(float(item)))
-            else:
-                encoded.append(item)
-        self.data = np.array(encoded, dtype=object)
+ENCODED_ZERO = float32_to_comp64(0.0)
 
-    def to_numpy(self) -> np.ndarray:
-        decoded = []
-        for item in self.data:
-            if isinstance(item, (int, float, np.integer, np.floating)):
-                decoded.append(comp64_to_float32(int(item)))
-            else:
-                decoded.append(item)
-        return np.array(decoded)
+def evector_empty(length: int) -> Vector:
+    return [ENCODED_ZERO for _ in range(length)]
 
-    @property
-    def shape(self) -> tuple:
-        return self.data.shape
+def evector_full(length: int, value: float) -> Vector:
+    comp64_val = float32_to_comp64(value)
+    return [comp64_val for _ in range(length)]
 
-    def __str__(self) -> str:
-        return str(self.to_numpy())
+def evector_zeros(length: int) -> Vector:
+    return evector_full(length, 0.0)
 
-    def __repr__(self) -> str:
-        return f"eVector({self.to_numpy()})"
+def evector_ones(length: int) -> Vector:
+    return evector_full(length, 1.0)
 
-def elem_add(vec_a: eVector, vec_b: eVector) -> eVector:
-    if vec_a.shape != vec_b.shape:
-        raise ValueError("Vectors must have the same shape")
-    result_encoded = [eadd(a, b) for a, b in zip(vec_a.data, vec_b.data)]
-    result = eVector.__new__(eVector)
-    result.data = np.array(result_encoded, dtype=object)
-    return result
+def evector_random(length: int, min_val: float = 0.0, max_val: float = 1.0) -> Vector:
+    return [float32_to_comp64(random.uniform(min_val, max_val)) for _ in range(length)]
 
-def elem_subtract(vec_a: eVector, vec_b: eVector) -> eVector:
-    if vec_a.shape != vec_b.shape:
-        raise ValueError("Vectors must have the same shape")
-    result_encoded = [esubtract(a, b) for a, b in zip(vec_a.data, vec_b.data)]
-    result = eVector.__new__(eVector)
-    result.data = np.array(result_encoded, dtype=object)
-    return result
+def evector_flatten(vector: Vector) -> List[int]:
+    return vector[:]
 
-def elem_multiply(vec_a: eVector, vec_b: eVector) -> eVector:
-    if vec_a.shape != vec_b.shape:
-        raise ValueError("Vectors must have the same shape")
-    result_encoded = [emultiply(a, b) for a, b in zip(vec_a.data, vec_b.data)]
-    result = eVector.__new__(eVector)
-    result.data = np.array(result_encoded, dtype=object)
-    return result
+def evector_length(vector: Vector) -> int:
+    return len(vector)
 
-def elem_divide(vec_a: eVector, vec_b: eVector) -> eVector:
-    if vec_a.shape != vec_b.shape:
-        raise ValueError("Vectors must have the same shape")
-    result_encoded = [edivide(a, b) for a, b in zip(vec_a.data, vec_b.data)]
-    result = eVector.__new__(eVector)
-    result.data = np.array(result_encoded, dtype=object)
-    return result
+def evector_reverse(vector: Vector) -> Vector:
+    return vector[::-1]
 
-def elem_reciprocal(vec: eVector) -> eVector:
-    result_encoded = [ereciprocal(x) for x in vec.data]
-    result = eVector.__new__(eVector)
-    result.data = np.array(result_encoded, dtype=object)
-    return result
-
-def dot_product(vec_a: eVector, vec_b: eVector) -> int:
-    if vec_a.shape != vec_b.shape:
-        raise ValueError("Vectors must have the same shape")
-    result = float32_to_comp64(0.0)
-    for a, b in zip(vec_a.data, vec_b.data):
-        product = emultiply(a, b)
-        result = eadd(result, product)
-    return result
+__all__ = [
+    'evector_empty', 'evector_full', 'evector_zeros', 'evector_ones',
+    'evector_random', 'evector_flatten', 'evector_length', 'evector_reverse'
+]
